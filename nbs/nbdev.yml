@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "solvedrive"
+  site-url: "https://answerDotAI.github.io/solvedrive"
+  description: ""
+  repo-branch: main
+  repo-url: "https://github.com/answerDotAI/solvedrive"
