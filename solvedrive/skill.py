@@ -1,12 +1,14 @@
-"""Load this skill when an agent needs to search, download, and upload Google Drive files using solvedrive. It covers connecting to Drive, searching with Drive's query syntax, downloading file content and exporting Google Docs, and uploading files and creating folders. Organizing, trash, deletion, and sharing are documented for reference but are not enabled by default.
+"""Load this skill when an agent needs to search, download, and upload Google Drive files using solvedrive. It covers connecting to Drive, searching across My Drive and shared drives with Drive's query syntax, downloading file content and exporting Google Docs, and uploading files and creating folders. Organizing, trash, deletion, and sharing are documented for reference but are not enabled by default.
 
-Connections use the `Drive` client: `drive = await Drive.init(scopes='readonly')`. Scopes control what the underlying OAuth token may do: `'readonly'` to search and download, `'file'` to also manage the files the app created, or `'full'` for everything. The first connection opens a browser to authorize, then caches the token so later runs don't re-prompt. `await drive.about()` returns the signed-in account, with the address on its `email` attribute.
+Connections use the `GDrive` client: `gd = await GDrive.init(scopes='readonly')`. Scopes control what the underlying OAuth token may do: `'readonly'` to search and download, `'file'` to also manage the files the app created, or `'full'` for everything. The first connection opens a browser to authorize, then caches the token so later runs don't re-prompt. `await gd.about()` returns the signed-in account, with the address on its `email` attribute.
 
-Everything in Drive is a **file**: documents, images, even folders (a folder is a file with a special `mimeType`). solvedrive wraps them in three types:
+Everything in Drive is a **file**: documents, images, even folders (a folder is a file with a special `mimeType`). Files live in drives: your personal My Drive, plus any shared drives you're a member of. solvedrive wraps the API in a handful of types:
 
+- **GDrive**: the signed-in account, holding auth, `about`, `upload`, `create_folder`, cross-drive `search_files`, and `list_drives`.
+- **Drive**: one drive, either My Drive (id `root`) or a shared drive. It reports your `role`, fetches its `root` folder, and scopes `search_files` to its contents.
 - **File**: id plus metadata, with content accessed via `download`. The API returns partial resources, so a `File` carries our default fields (`name`, `mimeType`, `size`, `modifiedTime`, `parents`, `trashed`, `webViewLink`); anything else needs `fields=` at search time or `await f.refresh(fields=...)`.
 - **Folder**: a `File` subclass adding `ls` and `upload` into itself.
-- **Files**: a collection of the above with a table repr and batch operations.
+- **Files** and **Drives**: collections of the above with table reprs; `Files` adds batch operations.
 
 Reprs render file names as links opening the file in Drive, so include them when reporting results to the user.
 
@@ -16,11 +18,13 @@ All solvedrive methods are async, so `await` them.
 
 Search uses Drive's own query syntax. Common operators: `name = 'report.pdf'`, `name contains 'report'`, `fullText contains 'budget'`, `mimeType = 'application/pdf'`, `mimeType contains 'google-apps'` (Google-native files), `'<folder-id>' in parents`, `'user@example.com' in owners`, and date filters like `modifiedTime > '2026-01-01'`. Combine them with `and`/`or`/`not`.
 
-    fs = await drive.search_files("name contains 'report' and trashed=false", max_results=20)
+    fs = await gd.search_files("name contains 'report' and trashed=false", max_results=20)
+
+`gd.search_files` covers every drive you can see. To search one drive, take a `Drive` from `list_drives` and call its `search_files`. My Drive's scope is the `user` corpus, which also includes files shared directly with you, since the API offers no My-Drive-only scope.
 
 Trashed files match too unless you exclude them, so almost every query wants `and trashed=false`.
 
-`folder.ls(q=None)` searches within a folder (already excluding trashed), and `File.fetch(drive, id)` gets one file when its id is already known.
+`folder.ls(q=None)` searches within a folder (already excluding trashed), and `File.fetch(gd, id)` gets one file when its id is already known.
 
 Search is keyword-driven and is not proof of absence. If a query comes back empty, try alternate terms (partial names, `fullText contains`, owners, likely parent folders) before concluding something isn't there.
 
@@ -38,10 +42,14 @@ Search is keyword-driven and is not proof of absence. If a query comes back empt
 
 `upload` sends a local path (or bytes plus a `name`) to Drive, returning the new `File`. The content type is guessed from the name unless `mime=` is given, and `folder=` targets a destination (default: My Drive root). Uploads are capped at 5MB.
 
-    f = await drive.upload('report.pdf', folder=folder)
-    f = await drive.upload(data=b'...', name='notes.txt')
+    f = await gd.upload('report.pdf', folder=folder)
+    f = await gd.upload(data=b'...', name='notes.txt')
 
-`await drive.create_folder(name, parent=None)` makes a folder, and `await folder.upload(...)` drops files straight into one. Drive allows duplicate names, so uploading twice makes two files rather than overwriting.
+`await gd.create_folder(name, parent=None)` makes a folder, and `await folder.upload(...)` drops files straight into one. Drive allows duplicate names, so uploading twice makes two files rather than overwriting.
+
+# Drives
+
+`await gd.list_drives()` returns a `Drives` table: My Drive first (id `root`, role `owner`), then every shared drive you're a member of. A shared drive belongs to an organization rather than a person. Members hold one role each on the whole drive (`organizer`, `fileOrganizer`, `writer`, `commenter`, or `reader`), files have no owner, and `d.role` reports yours. `await d.root` is an ordinary `Folder`, so its `upload` and `ls` work inside a shared drive like anywhere else. Creating, deleting, and administering shared drives is not wrapped; the raw client (`gd.drives`) reaches those endpoints if the user asks for them.
 
 # Organizing (not enabled by default)
 
@@ -70,11 +78,13 @@ The API returns partial resources: only the default fields are present unless as
 Searches match trashed files unless the query excludes them with `trashed=false`.
 
 Scopes gate what you can do: `'readonly'` can't upload or modify. A permission error usually means the client was created with too narrow a scope.
+
+Changes propagate with a small delay: a fresh upload or drive can be missing from a listing or search for a moment, so retry briefly before concluding it's absent.
 """
 from pyskills.core import allow
-from solvedrive.core import Drive, File, Folder, Files
+from solvedrive.core import GDrive, Drive, File, Folder, Files, Drives
 
-__all__ = ['Drive', 'File', 'Folder', 'Files']
+__all__ = ['GDrive', 'Drive', 'File', 'Folder', 'Files', 'Drives']
 
-allow({Drive: ['about', 'search_files', 'upload', 'create_folder'], File: ['refresh', 'fetch', 'download'],
-    Folder: ['ls', 'upload'], Files: ['refresh']})
+allow({GDrive: ['about', 'search_files', 'upload', 'create_folder', 'list_drives'], Drive: ['search_files'],
+    File: ['refresh', 'fetch', 'download'], Folder: ['ls', 'upload'], Files: ['refresh']})
