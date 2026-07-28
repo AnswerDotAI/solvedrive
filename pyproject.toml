@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "solvedrive"
 dynamic = ["version"]
-description = ""
+description = "Google Drive client built on the Drive API"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = []
+dependencies = ["fastcore", "fastgws>=0.2.5", "fastspec>=0.1.3"]
 
 [project.urls]
 Repository = "https://github.com/answerDotAI/solvedrive"
@@ -23,6 +23,9 @@ Documentation = "https://answerDotAI.github.io/solvedrive/"
 
 [project.entry-points.nbdev]
 solvedrive = "solvedrive._modidx:d"
+
+[project.entry-points.pyskills]
+"solvedrive.skill" = "solvedrive.skill"
 
 [tool.setuptools.dynamic]
 version = {attr = "solvedrive.__version__"}
