@@ -19,6 +19,7 @@ import json, mimetypes, sys
 FIELDS = 'id,name,mimeType,size,modifiedTime,parents,trashed,webViewLink'
 
 class GDrive(GetAttr):
+    _default = 'api'
     def __init__(self, creds): self.api = FGWSDrive(creds=creds)
 
     async def about(self):
