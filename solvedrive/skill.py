@@ -1,6 +1,12 @@
 """Load this skill when an agent needs to search, download, and upload Google Drive files using solvedrive. It covers connecting to Drive, searching across My Drive and shared drives with Drive's query syntax, downloading file content and exporting Google Docs, and uploading files and creating folders. Organizing, trash, deletion, and sharing are documented for reference but are not enabled by default.
 
-Connections use the `GDrive` client: `gd = await GDrive.init(scopes='readonly')`. Scopes control what the underlying OAuth token may do: `'readonly'` to search and download, `'file'` to also manage the files the app created, or `'full'` for everything. The first connection opens a browser to authorize, then caches the token so later runs don't re-prompt. `await gd.about()` returns the signed-in account, with the address on its `email` attribute.
+Connections use the `GDrive` client, constructed from fastgws credentials: `creds = await oauth_creds(scopes=[...], interactive=False)`, then `gd = GDrive(creds)`. Scopes control what the token may do: `https://www.googleapis.com/auth/drive.readonly` to search and download, `https://www.googleapis.com/auth/drive.file` to also manage the files the app created, or `https://www.googleapis.com/auth/drive` for everything. `await gd.about()` returns the signed-in account, with the address on its `email` attribute.
+
+`interactive=False` means only previously authorized tokens can be used. If it fails with a missing or invalid token error, the requested scopes have not been authorized yet. Authorize them with the two-step flow: `auth_url` returns an authorization link; show it to the user and ask them to visit it, approve access, and paste the code it displays back into the chat. Then pass whatever they paste (a bare code or the full redirect URL) to `finish_auth`, which exchanges it, saves the token, and returns the credentials. The code is single-use and PKCE-bound to this kernel's flow state, so relaying it through the chat is safe. `auth_url` requests the union of the saved token's scopes and the requested ones, so re-authorizing never drops existing grants.
+
+    url = auth_url(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+    # show `url` to the user; when they reply with the code:
+    gd = GDrive(finish_auth(code))
 
 Everything in Drive is a **file**: documents, images, even folders (a folder is a file with a special `mimeType`). Files live in drives: your personal My Drive, plus any shared drives you're a member of. solvedrive wraps the API in a handful of types:
 
@@ -77,14 +83,16 @@ The API returns partial resources: only the default fields are present unless as
 
 Searches match trashed files unless the query excludes them with `trashed=false`.
 
-Scopes gate what you can do: `'readonly'` can't upload or modify. A permission error usually means the client was created with too narrow a scope.
+Scopes gate what you can do: a `drive.readonly` token can't upload or modify. A permission error usually means the creds were made with too narrow a scope.
 
 Changes propagate with a small delay: a fresh upload or drive can be missing from a listing or search for a moment, so retry briefly before concluding it's absent.
 """
 from pyskills.core import allow
 from solvedrive.core import GDrive, Drive, File, Folder, Files, Drives
+from fastgws.auth import oauth_creds, auth_url, finish_auth
 
-__all__ = ['GDrive', 'Drive', 'File', 'Folder', 'Files', 'Drives']
+__all__ = ['GDrive', 'Drive', 'File', 'Folder', 'Files', 'Drives', 'oauth_creds', 'auth_url', 'finish_auth']
 
-allow({GDrive: ['about', 'search_files', 'upload', 'create_folder', 'list_drives'], Drive: ['search_files'],
+allow(oauth_creds, auth_url, finish_auth,
+      {GDrive: ['__init__', 'about', 'search_files', 'upload', 'create_folder', 'list_drives'], Drive: ['search_files'],
     File: ['refresh', 'fetch', 'download'], Folder: ['ls', 'upload'], Files: ['refresh']})

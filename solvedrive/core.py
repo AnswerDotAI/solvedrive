@@ -19,16 +19,7 @@ import json, mimetypes, sys
 FIELDS = 'id,name,mimeType,size,modifiedTime,parents,trashed,webViewLink'
 
 class GDrive(GetAttr):
-    _default = 'api'
-    def __init__(self, api): self.api = api
-
-    @classmethod
-    async def init(cls, scopes='readonly', creds=None, redirect_uri='https://oauth.appapis.org/redirect',
-        listen=False, port=0, open_url=print):
-        if scopes == 'full': scopes = ['https://www.googleapis.com/auth/drive']
-        else:                scopes = [f'https://www.googleapis.com/auth/drive.{x}' for x in listify(scopes)]
-        if creds is None: creds = await oauth_creds(scopes=scopes, redirect_uri=redirect_uri, listen=listen, port=port, open_url=open_url)
-        return cls(FGWSDrive(creds=creds))
+    def __init__(self, creds): self.api = FGWSDrive(creds=creds)
 
     async def about(self):
         "User resource with `email` attribute"
