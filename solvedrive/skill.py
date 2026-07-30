@@ -1,4 +1,4 @@
-"""Load this skill when an agent needs to search, download, and upload Google Drive files using solvedrive. It covers connecting to Drive, searching across My Drive and shared drives with Drive's query syntax, downloading file content and exporting Google Docs, and uploading files and creating folders. Organizing, trash, deletion, and sharing are documented for reference but are not enabled by default.
+"""Load this skill when an agent needs to search, download, and upload Google Drive files using solvedrive. It covers connecting to Drive, searching across My Drive and shared drives with Drive's query syntax, downloading file content and exporting Google Docs, and uploading, renaming, moving, and copying files and creating folders. Trash, deletion, and sharing are documented for reference but are not enabled by default.
 
 Connections use the `GDrive` client, constructed from fastgws credentials: `creds = await oauth_creds(scopes=[...], interactive=False)`, then `gd = GDrive(creds)`. Scopes control what the token may do: `https://www.googleapis.com/auth/drive.readonly` to search and download, `https://www.googleapis.com/auth/drive.file` to also manage the files the app created, or `https://www.googleapis.com/auth/drive` for everything. `await gd.about()` returns the signed-in account, with the address on its `email` attribute.
 
@@ -57,9 +57,9 @@ Search is keyword-driven and is not proof of absence. If a query comes back empt
 
 `await gd.list_drives()` returns a `Drives` table: My Drive first (id `root`, role `owner`), then every shared drive you're a member of. A shared drive belongs to an organization rather than a person. Members hold one role each on the whole drive (`organizer`, `fileOrganizer`, `writer`, `commenter`, or `reader`), files have no owner, and `d.role` reports yours. `await d.root` is an ordinary `Folder`, so its `upload` and `ls` work inside a shared drive like anywhere else. Creating, deleting, and administering shared drives is not wrapped; the raw client (`gd.drives`) reaches those endpoints if the user asks for them.
 
-# Organizing (not enabled by default)
+# Organizing
 
-These modify the user's existing files, so ask the user to enable them if the task requires it. `await f.rename(name)` renames; `await f.move(folder)` reparents; `await f.copy(name=None, folder=None)` is a server-side copy returning the new `File` (no bytes travel through your machine).
+`await f.rename(name)` renames; `await f.move(folder)` reparents; `await f.copy(name=None, folder=None)` is a server-side copy returning the new `File` (no bytes travel through your machine). Like `upload`, these are write operations enabled by default: they create or reorganize, but never destroy content. Only destructive operations (trash, deletion, sharing) are disabled by default.
 
 # Trash and deleting (not enabled by default)
 
@@ -95,4 +95,4 @@ __all__ = ['GDrive', 'Drive', 'File', 'Folder', 'Files', 'Drives', 'oauth_creds'
 
 allow(oauth_creds, auth_url, finish_auth,
       {GDrive: ['__init__', 'about', 'search_files', 'upload', 'create_folder', 'list_drives'], Drive: ['search_files'],
-    File: ['refresh', 'fetch', 'download'], Folder: ['ls', 'upload'], Files: ['refresh']})
+    File: ['refresh', 'fetch', 'download', 'rename', 'move', 'copy'], Folder: ['ls', 'upload'], Files: ['refresh']})
