@@ -136,8 +136,8 @@ async def download(self:File,
     native = self.mimeType.startswith('application/vnd.google-apps')
     if not native:
         if mime: raise ValueError(f'`mime` is for exporting Google-native files; {self.name} is {self.mimeType}')
-        r = await self._client.files.get(file_id=self.id, alt='media', raw=True, supports_all_drives=True)
-    else: r = await self._client.files.export(file_id=self.id, mime_type=mime or _exports[self.mimeType], raw=True)
+        r = await self._client.files.get(file_id=self.id, alt='media', raw_=True, supports_all_drives=True)
+    else: r = await self._client.files.export(file_id=self.id, mime_type=mime or _exports[self.mimeType], raw_=True)
     data = r.content
     if save:
         p = Path(save)
