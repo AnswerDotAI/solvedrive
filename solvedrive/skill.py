@@ -93,6 +93,5 @@ from fastgws.auth import oauth_creds, auth_url, finish_auth
 
 __all__ = ['GDrive', 'Drive', 'File', 'Folder', 'Files', 'Drives', 'oauth_creds', 'auth_url', 'finish_auth']
 
-allow(oauth_creds, auth_url, finish_auth,
-      {GDrive: ['__init__', 'about', 'search_files', 'upload', 'create_folder', 'list_drives'], Drive: ['search_files'],
+allow({GDrive: ['__init__', 'about', 'search_files', 'upload', 'create_folder', 'list_drives'], Drive: ['search_files'],
     File: ['refresh', 'fetch', 'download', 'rename', 'move', 'copy'], Folder: ['ls', 'upload'], Files: ['refresh']})
