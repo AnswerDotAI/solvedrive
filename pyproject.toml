@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ["fastcore", "fastgws>=0.2.7"]
+dependencies = ["fastcore>=2.2.6", "fastgws>=0.2.7"]
 
 [project.urls]
 Repository = "https://github.com/answerDotAI/solvedrive"
@@ -26,6 +26,9 @@ solvedrive = "solvedrive._modidx:d"
 
 [project.entry-points.pyskills]
 "solvedrive.skill" = "solvedrive.skill"
+
+[project.entry-points.fastaudit_import_allow]
+solvedrive = "solvedrive"
 
 [tool.setuptools.dynamic]
 version = {attr = "solvedrive.__version__"}

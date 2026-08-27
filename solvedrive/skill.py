@@ -69,9 +69,9 @@ Drive treats these differently: `await f.trash()` flips the `trashed` flag, reco
 
 `await f.share(email=None, role='reader', notify=False)` grants access, either to an email address or to anyone-with-the-link when no email is given, after which `f.webViewLink` is shareable. `await f.permissions` (a property, no parens) lists the current grants, and `await f.unshare(permission_id)` revokes one. Sharing exposes the user's data outward, so treat it as strictly opt-in.
 
-# Batch operations
+# Collection operations
 
-Operating on many files one request at a time is slow. A `Files` collection batches: `await fs.refresh()` re-fetches metadata for every file in one round trip, and `trash`/`untrash`/`delete` (not enabled by default) act on the whole collection the same way, so a search result can be acted on as a unit.
+A `Files` collection acts on every file it holds: `await fs.refresh()` re-fetches each file's metadata, and `trash`/`untrash`/`delete` (not enabled by default) act on the whole collection, so a search result can be acted on as a unit. The requests run concurrently, a bounded number at a time.
 
 # Gotchas
 
