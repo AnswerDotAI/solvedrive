@@ -265,39 +265,32 @@ async def delete(self:File):
 
 # %% ../nbs/00_core.ipynb #72defcd0
 @patch
-def _gfiles(self:Files): return self._client.api._gservice.files()
-
-@patch
 async def refresh(self:Files, fields=FIELDS):
-    "Batch re-fetch metadata for all files"
-    if not self: return self
-    res = self._client.batch_get([(f.id, self._gfiles().get(fileId=f.id, fields=fields, supportsAllDrives=True)) for f in self])
-    for f in self: f.update(dict2obj(res[f.id]))
+    "Re-fetch metadata for all files"
+    await parallel_async(File.refresh, self, fields)
     return self
 
 @patch
 async def _set_trashed(self:Files, trashed):
-    if not self: return self
-    res = self._client.batch_get([(f.id, self._gfiles().update(fileId=f.id, body=dict(trashed=trashed), fields=FIELDS, supportsAllDrives=True)) for f in self])
-    for f in self: f.update(dict2obj(res[f.id]))
+    await parallel_async(File._set_trashed, self, trashed)
     return self
 
 @patch
 async def trash(self:Files):
-    "Batch move all files to the trash"
+    "Move all files to the trash"
     sys.audit('solvedrive.Files.trash')
     return await self._set_trashed(True)
 
 @patch
 async def untrash(self:Files):
-    "Batch restore all files from the trash"
+    "Restore all files from the trash"
     return await self._set_trashed(False)
 
 @patch
 async def delete(self:Files):
-    "Batch delete all files permanently"
+    "Delete all files permanently"
     sys.audit('solvedrive.Files.delete')
-    if self: self._client.batch_get([(f.id, self._gfiles().delete(fileId=f.id, supportsAllDrives=True)) for f in self])
+    await parallel_async(File.delete, self)
 
 # %% ../nbs/00_core.ipynb #6d5ec299
 @patch
