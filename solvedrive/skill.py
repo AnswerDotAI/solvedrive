@@ -46,7 +46,7 @@ Search is keyword-driven and is not proof of absence. If a query comes back empt
 
 # Uploading and folders
 
-`upload` sends a local path (or bytes plus a `name`) to Drive, returning the new `File`. The content type is guessed from the name unless `mime=` is given, and `folder=` targets a destination (default: My Drive root). Uploads are capped at 5MB.
+`upload` sends a local path (or bytes plus a `name`) to Drive, returning the new `File`. The content type is guessed from the name unless `mime=` is given, and `folder=` targets a destination (default: My Drive root). A path streams from disk, so file size is limited only by Drive itself.
 
     f = await gd.upload('report.pdf', folder=folder)
     f = await gd.upload(data=b'...', name='notes.txt')

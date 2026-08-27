@@ -60,6 +60,5 @@ d = { 'settings': { 'branch': 'main',
                                  'solvedrive.core._link': ('core.html#_link', 'solvedrive/core.py'),
                                  'solvedrive.core._mk_file': ('core.html#_mk_file', 'solvedrive/core.py'),
                                  'solvedrive.core._mtype': ('core.html#_mtype', 'solvedrive/core.py'),
-                                 'solvedrive.core._multipart_related': ('core.html#_multipart_related', 'solvedrive/core.py'),
                                  'solvedrive.core.hsize': ('core.html#hsize', 'solvedrive/core.py')},
             'solvedrive.skill': {}}}
