@@ -27,6 +27,9 @@ solvedrive = "solvedrive._modidx:d"
 [project.entry-points.pyskills]
 "solvedrive.skill" = "solvedrive.skill"
 
+[project.entry-points.fastaudit_import_allow]
+solvedrive = "solvedrive"
+
 [tool.setuptools.dynamic]
 version = {attr = "solvedrive.__version__"}
 
