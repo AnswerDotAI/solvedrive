@@ -12,7 +12,7 @@ from fastcore.all import *
 from fastgws import Drive as FGWSDrive
 from fastgws.auth import *
 
-import mimetypes, sys
+import sys
 
 # %% ../nbs/00_core.ipynb #f4e588b0
 FIELDS = 'id,name,mimeType,size,modifiedTime,parents,trashed,webViewLink'
@@ -82,7 +82,6 @@ async def upload(self:GDrive,
 ):
     "Upload a file to Drive, returning the new `File`"
     if path: name = name or Path(path).name
-    mime = mime or mimetypes.guess_type(name)[0] or 'application/octet-stream'
     meta = dict(name=name)
     if folder: meta['parents'] = [_fid(folder)]
     r = await self.api.files.upload(media=path or data, media_type=mime, fields=FIELDS, supports_all_drives=True, **meta)
