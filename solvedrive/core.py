@@ -11,9 +11,8 @@ __all__ = ['FIELDS', 'FOLDER_MIME', 'DRIVE_FIELDS', 'GDrive', 'hsize', 'File', '
 from fastcore.all import *
 from fastgws import Drive as FGWSDrive
 from fastgws.auth import *
-from uuid import uuid4
 
-import json, mimetypes, sys
+import sys
 
 # %% ../nbs/00_core.ipynb #f4e588b0
 FIELDS = 'id,name,mimeType,size,modifiedTime,parents,trashed,webViewLink'
@@ -73,14 +72,6 @@ def _mk_file(client, d):
     return cls(client, d)
 
 # %% ../nbs/00_core.ipynb #a5cc3392
-_upload_url = 'https://www.googleapis.com/upload/drive/v3/files'
-
-def _multipart_related(meta, data, mime):
-    b = uuid4().hex
-    body = (f'--{b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json.dumps(meta)}\r\n'
-        f'--{b}\r\nContent-Type: {mime}\r\n\r\n').encode() + data + f'\r\n--{b}--'.encode()
-    return body, {'Content-Type': f'multipart/related; boundary={b}'}
-
 @patch
 async def upload(self:GDrive,
     path=None,   # File to upload
@@ -90,15 +81,10 @@ async def upload(self:GDrive,
     folder=None, # Destination `Folder` or folder id (default: My Drive root)
 ):
     "Upload a file to Drive, returning the new `File`"
-    if path:
-        p = Path(path)
-        name, data = name or p.name, p.read_bytes()
-    mime = mime or mimetypes.guess_type(name)[0] or 'application/octet-stream'
+    if path: name = name or Path(path).name
     meta = dict(name=name)
     if folder: meta['parents'] = [_fid(folder)]
-    body, hdrs = _multipart_related(meta, data, mime)
-    r = await self.api.transport.request('POST', _upload_url, content=body, headers=hdrs,
-        params=dict(uploadType='multipart', fields=FIELDS, supportsAllDrives=True))
+    r = await self.api.files.upload(media=path or data, media_type=mime, fields=FIELDS, supports_all_drives=True, **meta)
     return _mk_file(self, r)
 
 # %% ../nbs/00_core.ipynb #d7fe7a99
