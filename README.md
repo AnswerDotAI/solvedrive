@@ -17,12 +17,13 @@ $ pip install solvedrive
 
 ## How to use
 
-solvedrive signs in with OAuth 2.0 through [fastgws](https://github.com/AnswerDotAI/fastgws), which expects an OAuth client secret at `~/.config/fastgws/credentials.json`. The fastgws docs cover how to create that file from a Google Cloud project. The first connection opens a browser to authorize the scopes you asked for, then caches the token so later runs don’t prompt again.
+solvedrive signs in with OAuth 2.0 through [fastgws](https://github.com/AnswerDotAI/fastgws), using the OAuth client and tokens that [gclientid](https://github.com/AnswerDotAI/gclientid) creates. Run `gclientid` once to provision a Google Cloud project and OAuth client, then `gclientid-auth you@example.com` to authorize an account; the default `google-apps` preset includes full Drive access. `oauth_creds(account='you@example.com')` loads the saved token, refreshes it when it expires, and runs the browser authorization again when it is missing.
 
-Create a [`GDrive`](https://answerDotAI.github.io/solvedrive/core.html#gdrive) client with the scopes you need: `readonly` to search and download, `file` to also manage the files your app created, or `full` for everything. `about()` returns the signed-in account, with the address on its `email` attribute.
+Create a [`GDrive`](https://answerDotAI.github.io/solvedrive/core.html#gdrive) client from those credentials. `about()` returns the signed-in account, with the address on its `email` attribute.
 
 ``` python
-gd = await GDrive.init(scopes='full')
+creds = await oauth_creds(account='nc@answer.ai')
+gd = GDrive(creds)
 about = await gd.about()
 about.email
 ```
